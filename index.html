@@ -45,11 +45,9 @@
             </div>
         </div>
 
-        <!-- 新增工作日按鈕卡片 -->
-        <div v-if="!showAddForm" class="bg-white/90 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-blue-200 text-center cursor-pointer hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300" @click="toggleAddForm">
-            <div class="text-4xl mb-4">➕</div>
-            <div class="text-xl font-bold text-gray-800 mb-2">新增工作日</div>
-            <div class="text-sm text-gray-500">點擊輸入今日工時</div>
+        <!-- 新增工作日按鈕卡片 (縮小版，一行文字) -->
+        <div v-if="!showAddForm" class="bg-white/90 backdrop-blur-sm rounded-2xl p-3 mb-6 shadow-card shadow-blue-200 text-center cursor-pointer hover:shadow-xl hover:bg-blue-50 transform hover:scale-105 transition-all duration-200 h-14 flex items-center justify-center">
+            <div class="text-lg font-bold text-gray-800">➕ 新增工作日</div>
         </div>
 
         <!-- 新增工作日輸入表格 -->
@@ -168,7 +166,7 @@
             </div>
         </div>
 
-        <!-- 本月工時明細卡片 -->
+        <!-- 本月工時明細卡片 (移除類型圖示) -->
         <div class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-card shadow-indigo-200 slide-up">
             <h2 class="text-xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
                 📊 本月工時明細
@@ -189,22 +187,20 @@
                 <div 
                     v-for="(day, index) in currentMonthCalendarDays" 
                     :key="index"
-                    class="p-3 rounded-xl min-h-[70px] flex flex-col justify-center cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative border-2 hover:shadow-md"
+                    class="p-4 rounded-xl min-h-[65px] flex flex-col justify-center cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative border-2 hover:shadow-md text-center"
                     :class="getDayClass(day)"
                     @click="day.date && editDay(day.date)"
                 >
-                    <div v-if="!day.date" class="opacity-30">&nbsp;</div>
-                    <div v-else class="font-bold text-sm mb-1 leading-tight">{{ day.day }}</div>
+                    <!-- 日期數字 (加大字體) -->
+                    <div v-if="day.date" class="font-bold text-base mb-1 leading-tight">{{ day.day }}</div>
                     
-                    <div v-if="day.hasRecord" class="text-xs leading-tight">
-                        <div class="font-medium">{{ formatHours(day.hours) }}</div>
-                        <div v-if="day.ot > 0" class="text-yellow-500 text-[10px] mt-1">⭐{{ day.ot }}</div>
+                    <!-- 工時顯示 (只顯示時數，無類型圖示) -->
+                    <div v-if="day.hasRecord" class="text-sm font-semibold leading-tight">
+                        {{ formatHours(day.hours) }}
+                        <div v-if="day.ot > 0" class="text-yellow-500 text-xs mt-1">⭐{{ day.ot }}</div>
                     </div>
-                    <div v-else-if="day.date" class="text-gray-400 text-xs leading-tight">—</div>
-                    
-                    <div v-if="day.type && day.type !== 'custom' && day.date" class="absolute top-1 right-1 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg text-gray-700 border">
-                        {{ day.type }}
-                    </div>
+                    <div v-else-if="day.date" class="text-gray-400 text-sm leading-tight">—</div>
+                    <div v-else class="opacity-30">&nbsp;</div>
                 </div>
             </div>
         </div>
@@ -336,12 +332,10 @@
                     const lastDay = new Date(this.currentYear, this.currentMonth, 0);
                     const startOffset = firstDay.getDay();
                     
-                    // 前置空白格
                     for (let i = 0; i < startOffset; i++) {
                         days.push({ date: '', day: '', hasRecord: false });
                     }
                     
-                    // 本月日期
                     for (let dayNum = 1; dayNum <= lastDay.getDate(); dayNum++) {
                         const dateStr = `${this.currentYear}-${String(this.currentMonth).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
                         const workDay = this.workDays[dateStr];
@@ -407,8 +401,6 @@
                     return this.workTypes[this.newWorkDay.type] || 0;
                 },
                 addWorkDay() {
-                    console.log('開始儲存:', this.newWorkDay); // 除錯用
-                    
                     if (!this.isValidInput) {
                         this.showError('請檢查必填項目');
                         return;
@@ -417,7 +409,6 @@
                     this.isSaving = true;
                     this.showErrorToast = false;
 
-                    // 延遲確保 UI 更新
                     setTimeout(() => {
                         try {
                             const dateKey = this.newWorkDay.date;
@@ -425,9 +416,6 @@
                             const otHours = parseFloat(this.newWorkDay.ot || 0);
                             const totalHours = hours + otHours;
 
-                            console.log('儲存數據:', { dateKey, hours, otHours, totalHours });
-
-                            // 直接賦值給 Vue 響應式對象
                             this.workDays[dateKey] = {
                                 hours: totalHours,
                                 type: this.newWorkDay.type,
@@ -436,13 +424,8 @@
                                 date: dateKey
                             };
 
-                            // 觸發響應式更新
                             this.$forceUpdate();
-
-                            // 顯示成功
                             this.showSuccess();
-
-                            // 重置並關閉
                             this.newWorkDay = { date: this.today, type: '', ot: '0', customHours: null };
                             this.showAddForm = false;
 
