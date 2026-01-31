@@ -15,14 +15,16 @@
         @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse-green { animation: pulseGreen 2s infinite; }
+        @keyframes pulseGreen { 0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } }
     </style>
 </head>
 <body class="bg-gradient-to-br from-pink-50 to-indigo-100 min-h-screen p-4">
     <div id="app" class="max-w-md mx-auto">
         <!-- 頂置本月總工時 -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-pink-200 slide-up">
+        <div class="bg-white/90 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-pink-200 slide-up pulse-green">
             <div class="text-center">
-                <div class="text-3xl font-bold text-gray-800 mb-2">{{ formatMonthTotal }}</div>
+                <div class="text-3xl font-bold text-gray-800 mb-2" :class="{'animate-pulse': totalChanged}">{{ formatMonthTotal }}</div>
                 <div class="text-sm text-gray-500 mb-4">本月總工時 (小時)</div>
                 <div class="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full font-medium">
                     {{ currentMonth }}月
@@ -30,39 +32,45 @@
             </div>
         </div>
 
-        <!-- 新增工作日按鈕卡片 (隱藏表格) -->
-        <div v-if="!showAddForm" class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-blue-200 text-center cursor-pointer hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300" @click="showAddForm = true">
+        <!-- 新增工作日按鈕卡片 -->
+        <div v-if="!showAddForm" class="bg-white/90 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-blue-200 text-center cursor-pointer hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300" @click="showAddForm = true">
             <div class="text-4xl mb-4">➕</div>
             <div class="text-xl font-bold text-gray-800 mb-2">新增工作日</div>
             <div class="text-sm text-gray-500">點擊輸入今日工時</div>
         </div>
 
-        <!-- 新增工作日輸入表格 (點擊按鈕後顯示) -->
-        <div v-if="showAddForm" class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 mb-6 shadow-card shadow-blue-200 slide-up">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-bold text-gray-800">➕ 新增工作日</h2>
-                <button @click="showAddForm = false" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">✕</button>
+        <!-- 新增工作日輸入表格 -->
+        <div v-if="showAddForm" class="bg-white/95 backdrop-blur-sm rounded-3xl p-6 mb-6 shadow-card shadow-blue-300 slide-up border-4 border-blue-100">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-blue-200">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <span class="mr-2">➕</span>新增工作日
+                </h2>
+                <button @click="showAddForm = false" class="text-gray-500 hover:text-gray-700 text-2xl font-bold p-1 hover:bg-gray-200 rounded-full transition-all">✕</button>
             </div>
             
             <div class="space-y-4">
                 <!-- 日期選擇 -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">📅 日期</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <span class="mr-2">📅</span>日期
+                    </label>
                     <input 
                         v-model="newWorkDay.date" 
                         type="date" 
-                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-400 text-lg"
+                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-400 text-lg transition-all"
                         :max="today"
                     >
                 </div>
 
                 <!-- 工時類型選擇 -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">⏰ 工時類型</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <span class="mr-2">⏰</span>工時類型
+                    </label>
                     <select 
                         v-model="newWorkDay.type" 
                         @change="handleTypeChange"
-                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-400 text-lg appearance-none bg-white"
+                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-400 text-lg appearance-none bg-white transition-all"
                     >
                         <option value="">選擇類型</option>
                         <option value="TC">TC (+9.25h)</option>
@@ -79,10 +87,12 @@
 
                 <!-- OT 選擇 -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">⭐ OT 加班</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <span class="mr-2">⭐</span>OT 加班
+                    </label>
                     <select 
                         v-model="newWorkDay.ot" 
-                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-400 text-lg appearance-none bg-white"
+                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-400 text-lg appearance-none bg-white transition-all"
                     >
                         <option value="0">無 OT</option>
                         <option value="0.5">+0.5 小時</option>
@@ -95,87 +105,120 @@
                 </div>
 
                 <!-- 自訂時數輸入 -->
-                <div v-if="newWorkDay.type === 'custom'" class="pt-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">✏️ 自訂工時 (小時)</label>
+                <div v-if="newWorkDay.type === 'custom'">
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <span class="mr-2">✏️</span>自訂工時 (小時)
+                    </label>
                     <input 
                         v-model.number="newWorkDay.customHours" 
                         type="number" 
                         step="0.1"
                         min="-24" max="24"
-                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-400 text-lg"
+                        class="w-full p-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-400 text-lg transition-all"
                         placeholder="輸入工時..."
                     >
                 </div>
 
                 <!-- 即時預覽總時數 -->
-                <div v-if="previewHours !== null" class="bg-green-50 border-2 border-green-200 rounded-2xl p-4 text-center">
-                    <div class="text-sm text-gray-600 mb-1">預覽總工時</div>
-                    <div class="text-2xl font-bold text-green-700">{{ previewHours.toFixed(2) }} 小時</div>
+                <div v-if="previewHours !== null" class="bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-2xl p-4 text-center shadow-lg">
+                    <div class="text-sm opacity-90 mb-1">即時預覽</div>
+                    <div class="text-2xl font-bold">{{ previewHours.toFixed(2) }} 小時</div>
                 </div>
 
                 <!-- 新增按鈕 -->
                 <button 
                     @click="addWorkDay"
                     :disabled="!isValidInput"
-                    class="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold py-4 px-6 rounded-2xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 bounce"
+                    :class="[
+                        'w-full font-bold py-4 px-6 rounded-2xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center justify-center',
+                        isValidInput ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white bounce' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ]"
                 >
                     ✨ 儲存工作日
                 </button>
             </div>
         </div>
 
-        <!-- 月歷卡片 -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-card shadow-indigo-200 slide-up">
-            <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">📊 本月工時明細</h2>
+        <!-- 本月工時明細卡片 (只顯示本月，無滾動) -->
+        <div class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-card shadow-indigo-200 slide-up">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
+                📊 本月工時明細
+                <span v-if="currentMonthWorkDays.length === 0" class="ml-2 text-sm text-gray-400">(暫無記錄)</span>
+            </h2>
             
-            <div class="grid grid-cols-7 gap-2 text-center mb-4">
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">日</div>
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">一</div>
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">二</div>
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">三</div>
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">四</div>
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">五</div>
-                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">六</div>
+            <!-- 星期標題 -->
+            <div class="grid grid-cols-7 gap-2 text-center mb-6">
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">日</div>
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">一</div>
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">二</div>
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">三</div>
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">四</div>
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">五</div>
+                <div class="font-bold text-gray-700 p-3 bg-gray-100 rounded-xl text-sm">六</div>
             </div>
 
-            <div class="grid grid-cols-7 gap-2 max-h-96 overflow-y-auto pb-4">
+            <!-- 本月日曆 (只顯示本月日期，無滾動) -->
+            <div class="grid grid-cols-7 gap-2">
                 <div 
-                    v-for="day in calendarDays" 
+                    v-for="day in currentMonthCalendarDays" 
                     :key="day.date"
-                    class="p-3 rounded-xl min-h-[60px] flex flex-col justify-center cursor-pointer hover:scale-105 transition-all duration-200 group relative"
+                    class="p-3 rounded-xl min-h-[70px] flex flex-col justify-center cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative border-2"
                     :class="getDayClass(day)"
                     @click="editDay(day.date)"
                 >
+                    <!-- 日期數字 -->
                     <div class="font-bold text-sm mb-1 leading-tight">{{ day.day }}</div>
-                    <div v-if="day.hours !== null" class="text-xs leading-tight">
-                        {{ formatHours(day.hours) }}
+                    
+                    <!-- 工時顯示 -->
+                    <div v-if="day.hasRecord" class="text-xs leading-tight">
+                        <div class="font-medium">{{ formatHours(day.hours) }}</div>
                         <div v-if="day.ot > 0" class="text-yellow-500 text-[10px] mt-1">⭐{{ day.ot }}</div>
                     </div>
                     <div v-else class="text-gray-400 text-xs leading-tight">—</div>
+                    
+                    <!-- 類型標籤 -->
+                    <div v-if="day.type && day.type !== 'custom'" class="absolute top-1 right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] font-bold shadow text-gray-700">
+                        {{ day.type }}
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- 編輯彈窗 -->
-        <div v-if="showEditModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-pulse">
-                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">編輯 {{ editDate }}</h3>
-                <input 
-                    v-model.number="editHours" 
-                    type="number" 
-                    step="0.1"
-                    class="w-full p-4 border border-gray-200 rounded-2xl mb-4 text-lg text-center font-bold focus:ring-4 focus:ring-green-200"
-                    placeholder="輸入工時..."
-                >
-                <div class="flex space-x-3">
+        <div v-if="showEditModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl border-4 border-green-200 animate-in slide-in-from-bottom-4 duration-300">
+                <h3 class="text-xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
+                    <span class="mr-2">✏️</span>編輯 {{ editDate }}
+                </h3>
+                <div class="relative">
+                    <input 
+                        v-model.number="editHours" 
+                        type="number" 
+                        step="0.1"
+                        class="w-full p-6 border-2 border-gray-200 rounded-2xl text-xl text-center font-bold focus:ring-4 focus:ring-green-300 focus:border-green-400 transition-all shadow-inner"
+                        placeholder="輸入工時..."
+                    >
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span class="text-2xl">⏱️</span>
+                    </div>
+                </div>
+                <div class="flex space-x-3 mt-8">
                     <button 
                         @click="saveEdit"
-                        class="flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
-                    >✅ 確定</button>
+                        :disabled="editHours === null || isNaN(editHours)"
+                        :class="[
+                            'flex-1 font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all flex items-center justify-center',
+                            editHours !== null && !isNaN(editHours) ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        ]"
+                    >
+                        ✅ 確定儲存
+                    </button>
                     <button 
                         @click="cancelEdit"
-                        class="flex-1 bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
-                    >❌ 取消</button>
+                        class="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
+                    >
+                        ❌ 取消
+                    </button>
                 </div>
             </div>
         </div>
@@ -188,7 +231,9 @@
             data() {
                 return {
                     currentMonth: new Date().getMonth() + 1,
+                    currentYear: new Date().getFullYear(),
                     showAddForm: false,
+                    totalChanged: false,
                     workDays: {},
                     newWorkDay: {
                         date: '',
@@ -213,34 +258,35 @@
             },
             computed: {
                 today() {
-                    const today = new Date();
-                    return today.toISOString().split('T')[0];
+                    return new Date().toISOString().split('T')[0];
                 },
                 formatMonthTotal() {
-                    const total = this.getMonthTotal();
-                    return total.toFixed(2);
+                    return this.getMonthTotal().toFixed(2);
                 },
                 previewHours() {
                     if (!this.isValidInput) return null;
-                    const baseHours = this.getHoursForDay();
-                    return baseHours + parseFloat(this.newWorkDay.ot);
+                    return this.getHoursForDay() + parseFloat(this.newWorkDay.ot);
                 },
                 isValidInput() {
                     return this.newWorkDay.date && 
                            (this.newWorkDay.type && this.newWorkDay.type !== 'custom' ||
                             (this.newWorkDay.type === 'custom' && this.newWorkDay.customHours !== null && !isNaN(this.newWorkDay.customHours)));
                 },
-                calendarDays() {
+                currentMonthWorkDays() {
+                    return Object.values(this.workDays).filter(day => {
+                        if (!day.date) return false;
+                        const date = new Date(day.date);
+                        return date.getFullYear() === this.currentYear && date.getMonth() + 1 === this.currentMonth;
+                    });
+                },
+                currentMonthCalendarDays() {
                     const days = [];
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = this.currentMonth - 1;
-                    const firstDay = new Date(year, month, 1);
-                    const lastDay = new Date(year, month + 1, 0);
+                    const firstDay = new Date(this.currentYear, this.currentMonth - 1, 1);
+                    const lastDay = new Date(this.currentYear, this.currentMonth, 0);
                     const startDate = new Date(firstDay);
-                    startDate.setDate(startDate.getDate() - firstDay.getDay());
+                    startDate.setDate(firstDay.getDate() - firstDay.getDay());
 
-                    for (let i = 0; i < 42; i++) {
+                    for (let i = 0; i <= lastDay.getDate(); i++) {
                         const date = new Date(startDate);
                         date.setDate(startDate.getDate() + i);
                         
@@ -253,7 +299,7 @@
                             hours: workDay ? workDay.hours : null,
                             ot: workDay ? (workDay.ot || 0) : 0,
                             type: workDay ? workDay.type : null,
-                            isCurrentMonth: date.getMonth() === month
+                            hasRecord: !!workDay
                         });
                     }
                     return days;
@@ -261,10 +307,26 @@
             },
             watch: {
                 workDays: {
-                    handler() {
+                    handler(newVal, oldVal) {
+                        this.totalChanged = true;
+                        setTimeout(() => {
+                            this.totalChanged = false;
+                        }, 2000);
                         this.saveData();
                     },
                     deep: true
+                },
+                'newWorkDay.date'(newDate) {
+                    if (newDate) {
+                        const existing = this.workDays[newDate];
+                        if (existing) {
+                            this.newWorkDay.type = existing.type || '';
+                            this.newWorkDay.ot = existing.ot?.toString() || '0';
+                            if (existing.type === 'custom') {
+                                this.newWorkDay.customHours = existing.customHours;
+                            }
+                        }
+                    }
                 }
             },
             methods: {
@@ -286,7 +348,7 @@
                     const hours = this.getHoursForDay();
                     const totalHours = hours + parseFloat(this.newWorkDay.ot);
 
-                    Vue.set(this.workDays, dateKey, {
+                    this.$set(this.workDays, dateKey, {
                         hours: totalHours,
                         type: this.newWorkDay.type,
                         ot: parseFloat(this.newWorkDay.ot),
@@ -294,11 +356,7 @@
                         date: dateKey
                     });
 
-                    // 強制更新
-                    this.$forceUpdate();
                     this.resetForm();
-                    
-                    // 顯示成功動畫
                     this.showAddForm = false;
                 },
                 resetForm() {
@@ -306,31 +364,29 @@
                 },
                 getMonthTotal() {
                     let total = 0;
-                    Object.values(this.workDays).forEach(day => {
-                        if (day.date) {
-                            const date = new Date(day.date);
-                            if (date.getMonth() + 1 === this.currentMonth) {
-                                total += day.hours || 0;
-                            }
-                        }
+                    this.currentMonthWorkDays.forEach(day => {
+                        total += day.hours || 0;
                     });
                     return total;
                 },
                 formatHours(hours) {
-                    if (hours === null || hours === undefined) return '';
+                    if (hours === null || hours === undefined || isNaN(hours)) return '';
                     return parseFloat(hours).toFixed(2);
                 },
                 getDayClass(day) {
-                    let classes = 'text-gray-600';
-                    if (!day.isCurrentMonth) {
-                        classes += ' opacity-50';
-                    } else if (day.hours !== null && day.hours !== undefined) {
-                        if (day.hours > 10) classes += ' bg-emerald-100 border-2 border-emerald-300 shadow-md';
-                        else if (day.hours > 0) classes += ' bg-green-100 border-2 border-green-300';
-                        else if (day.hours < 0) classes += ' bg-red-100 border-2 border-red-300 shadow-md';
-                        else classes += ' bg-yellow-100 border-2 border-yellow-300';
+                    let classes = '';
+                    if (day.hasRecord) {
+                        if (day.hours > 10) {
+                            classes = 'bg-emerald-100 border-emerald-400 shadow-md hover:shadow-emerald-300';
+                        } else if (day.hours > 0) {
+                            classes = 'bg-green-100 border-green-400 shadow-sm hover:shadow-green-200';
+                        } else if (day.hours < 0) {
+                            classes = 'bg-red-100 border-red-400 shadow-md hover:shadow-red-300';
+                        } else {
+                            classes = 'bg-yellow-100 border-yellow-400 hover:shadow-yellow-200';
+                        }
                     } else {
-                        classes += ' bg-gray-50 border border-gray-200';
+                        classes = 'bg-gray-50 border-gray-200 hover:border-gray-300';
                     }
                     return classes;
                 },
@@ -343,9 +399,8 @@
                     }
                 },
                 saveEdit() {
-                    if (this.editHours !== null && this.editHours !== undefined && !isNaN(this.editHours)) {
-                        Vue.set(this.workDays[this.editDate], 'hours', parseFloat(this.editHours));
-                        this.$forceUpdate();
+                    if (this.editHours !== null && !isNaN(this.editHours)) {
+                        this.$set(this.workDays[this.editDate], 'hours', parseFloat(this.editHours));
                     }
                     this.cancelEdit();
                 },
@@ -359,12 +414,10 @@
                 }
             },
             mounted() {
-                // 載入現有數據
                 const savedData = localStorage.getItem('workDays');
                 if (savedData) {
                     this.workDays = JSON.parse(savedData);
                 }
-                // 設定今天的日期
                 this.newWorkDay.date = this.today;
             }
         }).mount('#app');
