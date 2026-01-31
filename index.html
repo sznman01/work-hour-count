@@ -13,12 +13,14 @@
         .shadow-card { box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .bounce { animation: bounce 0.5s ease-in-out; }
         @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-gradient-to-br from-pink-50 to-indigo-100 min-h-screen p-4">
     <div id="app" class="max-w-md mx-auto">
         <!-- 頂置本月總工時 -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-pink-200">
+        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-pink-200 slide-up">
             <div class="text-center">
                 <div class="text-3xl font-bold text-gray-800 mb-2">{{ formatMonthTotal }}</div>
                 <div class="text-sm text-gray-500 mb-4">本月總工時 (小時)</div>
@@ -28,9 +30,19 @@
             </div>
         </div>
 
-        <!-- 增加工作日按鈕 -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 mb-6 shadow-card shadow-blue-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">➕ 新增工作日</h2>
+        <!-- 新增工作日按鈕卡片 (隱藏表格) -->
+        <div v-if="!showAddForm" class="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-card shadow-blue-200 text-center cursor-pointer hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300" @click="showAddForm = true">
+            <div class="text-4xl mb-4">➕</div>
+            <div class="text-xl font-bold text-gray-800 mb-2">新增工作日</div>
+            <div class="text-sm text-gray-500">點擊輸入今日工時</div>
+        </div>
+
+        <!-- 新增工作日輸入表格 (點擊按鈕後顯示) -->
+        <div v-if="showAddForm" class="bg-white/90 backdrop-blur-sm rounded-3xl p-6 mb-6 shadow-card shadow-blue-200 slide-up">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800">➕ 新增工作日</h2>
+                <button @click="showAddForm = false" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">✕</button>
+            </div>
             
             <div class="space-y-4">
                 <!-- 日期選擇 -->
@@ -95,6 +107,12 @@
                     >
                 </div>
 
+                <!-- 即時預覽總時數 -->
+                <div v-if="previewHours !== null" class="bg-green-50 border-2 border-green-200 rounded-2xl p-4 text-center">
+                    <div class="text-sm text-gray-600 mb-1">預覽總工時</div>
+                    <div class="text-2xl font-bold text-green-700">{{ previewHours.toFixed(2) }} 小時</div>
+                </div>
+
                 <!-- 新增按鈕 -->
                 <button 
                     @click="addWorkDay"
@@ -107,46 +125,46 @@
         </div>
 
         <!-- 月歷卡片 -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-card shadow-indigo-200">
+        <div class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-card shadow-indigo-200 slide-up">
             <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">📊 本月工時明細</h2>
             
             <div class="grid grid-cols-7 gap-2 text-center mb-4">
-                <div class="font-bold text-gray-700 p-2">日</div>
-                <div class="font-bold text-gray-700 p-2">一</div>
-                <div class="font-bold text-gray-700 p-2">二</div>
-                <div class="font-bold text-gray-700 p-2">三</div>
-                <div class="font-bold text-gray-700 p-2">四</div>
-                <div class="font-bold text-gray-700 p-2">五</div>
-                <div class="font-bold text-gray-700 p-2">六</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">日</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">一</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">二</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">三</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">四</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">五</div>
+                <div class="font-bold text-gray-700 p-2 bg-gray-100 rounded-xl">六</div>
             </div>
 
-            <div class="grid grid-cols-7 gap-2 max-h-96 overflow-y-auto">
+            <div class="grid grid-cols-7 gap-2 max-h-96 overflow-y-auto pb-4">
                 <div 
                     v-for="day in calendarDays" 
                     :key="day.date"
-                    class="p-3 rounded-xl min-h-[60px] flex flex-col justify-center cursor-pointer hover:scale-105 transition-all duration-200 group"
+                    class="p-3 rounded-xl min-h-[60px] flex flex-col justify-center cursor-pointer hover:scale-105 transition-all duration-200 group relative"
                     :class="getDayClass(day)"
                     @click="editDay(day.date)"
                 >
-                    <div class="font-bold text-sm mb-1">{{ day.day }}</div>
-                    <div v-if="day.hours !== null" class="text-xs">
+                    <div class="font-bold text-sm mb-1 leading-tight">{{ day.day }}</div>
+                    <div v-if="day.hours !== null" class="text-xs leading-tight">
                         {{ formatHours(day.hours) }}
                         <div v-if="day.ot > 0" class="text-yellow-500 text-[10px] mt-1">⭐{{ day.ot }}</div>
                     </div>
-                    <div v-else class="text-gray-400 text-xs">—</div>
+                    <div v-else class="text-gray-400 text-xs leading-tight">—</div>
                 </div>
             </div>
         </div>
 
         <!-- 編輯彈窗 -->
         <div v-if="showEditModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl">
+            <div class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-pulse">
                 <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">編輯 {{ editDate }}</h3>
                 <input 
                     v-model.number="editHours" 
                     type="number" 
                     step="0.1"
-                    class="w-full p-4 border border-gray-200 rounded-2xl mb-4 text-lg text-center font-bold"
+                    class="w-full p-4 border border-gray-200 rounded-2xl mb-4 text-lg text-center font-bold focus:ring-4 focus:ring-green-200"
                     placeholder="輸入工時..."
                 >
                 <div class="flex space-x-3">
@@ -170,7 +188,8 @@
             data() {
                 return {
                     currentMonth: new Date().getMonth() + 1,
-                    workDays: JSON.parse(localStorage.getItem('workDays') || '{}'),
+                    showAddForm: false,
+                    workDays: {},
                     newWorkDay: {
                         date: '',
                         type: '',
@@ -201,10 +220,15 @@
                     const total = this.getMonthTotal();
                     return total.toFixed(2);
                 },
+                previewHours() {
+                    if (!this.isValidInput) return null;
+                    const baseHours = this.getHoursForDay();
+                    return baseHours + parseFloat(this.newWorkDay.ot);
+                },
                 isValidInput() {
                     return this.newWorkDay.date && 
                            (this.newWorkDay.type && this.newWorkDay.type !== 'custom' ||
-                            (this.newWorkDay.type === 'custom' && this.newWorkDay.customHours !== null));
+                            (this.newWorkDay.type === 'custom' && this.newWorkDay.customHours !== null && !isNaN(this.newWorkDay.customHours)));
                 },
                 calendarDays() {
                     const days = [];
@@ -227,11 +251,20 @@
                             date: dateKey,
                             day: date.getDate(),
                             hours: workDay ? workDay.hours : null,
-                            ot: workDay ? workDay.ot : 0,
+                            ot: workDay ? (workDay.ot || 0) : 0,
+                            type: workDay ? workDay.type : null,
                             isCurrentMonth: date.getMonth() === month
                         });
                     }
                     return days;
+                }
+            },
+            watch: {
+                workDays: {
+                    handler() {
+                        this.saveData();
+                    },
+                    deep: true
                 }
             },
             methods: {
@@ -247,43 +280,57 @@
                     return this.workTypes[this.newWorkDay.type] || 0;
                 },
                 addWorkDay() {
+                    if (!this.isValidInput) return;
+                    
                     const dateKey = this.newWorkDay.date;
                     const hours = this.getHoursForDay();
                     const totalHours = hours + parseFloat(this.newWorkDay.ot);
 
-                    this.$set(this.workDays, dateKey, {
+                    Vue.set(this.workDays, dateKey, {
                         hours: totalHours,
                         type: this.newWorkDay.type,
                         ot: parseFloat(this.newWorkDay.ot),
-                        customHours: this.newWorkDay.type === 'custom' ? hours : null
+                        customHours: this.newWorkDay.type === 'custom' ? hours : null,
+                        date: dateKey
                     });
 
-                    this.saveData();
+                    // 強制更新
+                    this.$forceUpdate();
                     this.resetForm();
+                    
+                    // 顯示成功動畫
+                    this.showAddForm = false;
                 },
                 resetForm() {
-                    this.newWorkDay = { date: '', type: '', ot: '0', customHours: null };
+                    this.newWorkDay = { date: this.today, type: '', ot: '0', customHours: null };
                 },
                 getMonthTotal() {
                     let total = 0;
                     Object.values(this.workDays).forEach(day => {
-                        const date = new Date(day.date);
-                        if (date.getMonth() + 1 === this.currentMonth) {
-                            total += day.hours;
+                        if (day.date) {
+                            const date = new Date(day.date);
+                            if (date.getMonth() + 1 === this.currentMonth) {
+                                total += day.hours || 0;
+                            }
                         }
                     });
                     return total;
                 },
                 formatHours(hours) {
-                    return hours.toFixed(2);
+                    if (hours === null || hours === undefined) return '';
+                    return parseFloat(hours).toFixed(2);
                 },
                 getDayClass(day) {
                     let classes = 'text-gray-600';
-                    if (!day.isCurrentMonth) classes += ' opacity-50';
-                    if (day.hours !== null) {
-                        if (day.hours > 0) classes += ' bg-green-100 border-2 border-green-300';
-                        else if (day.hours < 0) classes += ' bg-red-100 border-2 border-red-300';
+                    if (!day.isCurrentMonth) {
+                        classes += ' opacity-50';
+                    } else if (day.hours !== null && day.hours !== undefined) {
+                        if (day.hours > 10) classes += ' bg-emerald-100 border-2 border-emerald-300 shadow-md';
+                        else if (day.hours > 0) classes += ' bg-green-100 border-2 border-green-300';
+                        else if (day.hours < 0) classes += ' bg-red-100 border-2 border-red-300 shadow-md';
                         else classes += ' bg-yellow-100 border-2 border-yellow-300';
+                    } else {
+                        classes += ' bg-gray-50 border border-gray-200';
                     }
                     return classes;
                 },
@@ -296,10 +343,9 @@
                     }
                 },
                 saveEdit() {
-                    if (this.editHours !== null && this.editHours !== undefined) {
-                        const workDay = this.workDays[this.editDate];
-                        this.$set(this.workDays[this.editDate], 'hours', parseFloat(this.editHours));
-                        this.saveData();
+                    if (this.editHours !== null && this.editHours !== undefined && !isNaN(this.editHours)) {
+                        Vue.set(this.workDays[this.editDate], 'hours', parseFloat(this.editHours));
+                        this.$forceUpdate();
                     }
                     this.cancelEdit();
                 },
@@ -314,10 +360,12 @@
             },
             mounted() {
                 // 載入現有數據
-                this.workDays = JSON.parse(localStorage.getItem('workDays') || '{}');
+                const savedData = localStorage.getItem('workDays');
+                if (savedData) {
+                    this.workDays = JSON.parse(savedData);
+                }
                 // 設定今天的日期
-                const today = new Date().toISOString().split('T')[0];
-                if (!this.newWorkDay.date) this.newWorkDay.date = today;
+                this.newWorkDay.date = this.today;
             }
         }).mount('#app');
     </script>
