@@ -23,6 +23,14 @@
 
         /* 底部 tab bar 佔位，避免內容被遮住 */
         .bottom-safe { padding-bottom: 88px; }
+        
+    /* 分頁切換動畫 */
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { 
+        from { opacity: 0; transform: translateY(10px); } 
+        to { opacity: 1; transform: translateY(0); } 
+    }
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-pink-50 to-indigo-100 min-h-screen p-4">
