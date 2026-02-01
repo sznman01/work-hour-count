@@ -35,7 +35,18 @@
         <div class="text-center">
           <div class="text-sm text-gray-500 mb-1">本月總工時 (小時)</div>
           <div class="text-4xl font-bold text-gray-800 mb-3">{{ monthTotal.toFixed(2) }}</div>
-          <div class="inline-flex items-center gap-2">
+
+          <!-- NEW: Remaining hours to reach 208 -->
+          <div class="text-sm bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 inline-block">
+            <span class="text-gray-600">本月目標：</span>
+            <span class="font-bold text-gray-800">{{ monthlyTarget }}</span>
+            <span class="text-gray-600"> 小時</span>
+            <span class="mx-2 text-gray-300">|</span>
+            <span v-if="monthDiff < 0" class="font-bold text-red-700">仲差 {{ (-monthDiff).toFixed(2) }} 小時</span>
+            <span v-else class="font-bold text-emerald-700">已達標（超出 {{ monthDiff.toFixed(2) }} 小時）</span>
+          </div>
+
+          <div class="mt-4 inline-flex items-center gap-2">
             <span class="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium">{{ currentYear }} 年</span>
             <span class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium">{{ currentMonth }} 月</span>
           </div>
@@ -165,7 +176,17 @@
         <div class="text-center">
           <div class="text-sm text-gray-500 mb-1">歷史總工時 (至今)</div>
           <div class="text-4xl font-bold text-gray-800 mb-3">{{ lifetimeTotal.toFixed(2) }}</div>
-          <div class="text-xs text-gray-500">（以下可用篩選器直接查看某年某月）</div>
+
+          <!-- NEW: Monthly balance sum vs 208 per month -->
+          <div class="text-sm bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 inline-block">
+            <span class="text-gray-600">截至今日工作時數結餘：</span>
+            <span class="font-bold" :class="lifetimeBalance < 0 ? 'text-red-700' : 'text-emerald-700'">
+              {{ lifetimeBalance.toFixed(2) }}
+            </span>
+            <span class="text-gray-600"> 小時</span>
+          </div>
+
+          <div class="text-xs text-gray-500 mt-3">（結餘計法：每月合計 − {{ monthlyTarget }}；然後將所有有記錄嘅月份加總）</div>
         </div>
       </div>
 
@@ -269,7 +290,7 @@
       </div>
     </div>
 
-    <!-- Bottom tab bar (MOVED INSIDE #app so Vue events work) -->
+    <!-- Bottom tab bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200">
       <div class="max-w-md mx-auto grid grid-cols-2">
         <button @click="switchView('month')" class="py-4 text-center font-medium"
@@ -294,6 +315,9 @@ createApp({
       currentView: 'month',
       currentMonth: new Date().getMonth() + 1,
       currentYear: new Date().getFullYear(),
+
+      // NEW
+      monthlyTarget: 208,
 
       showAddForm: false,
       showMonthList: true,
@@ -379,6 +403,11 @@ createApp({
       return this.currentMonthWorkDays.reduce((sum, d) => sum + (parseFloat(d.hours) || 0), 0);
     },
 
+    // NEW
+    monthDiff() {
+      return this.monthTotal - this.monthlyTarget;
+    },
+
     currentMonthCalendarDays() {
       const days = [];
       const firstDay = new Date(this.currentYear, this.currentMonth - 1, 1);
@@ -408,6 +437,27 @@ createApp({
     // History totals
     lifetimeTotal() {
       return Object.values(this.workDays).reduce((sum, d) => sum + (parseFloat(d?.hours) || 0), 0);
+    },
+
+    // NEW: group totals by month then sum (monthTotal - target)
+    monthlyTotalsMap() {
+      const map = {};
+      Object.values(this.workDays).forEach(d => {
+        if (!d?.date) return;
+        const dt = new Date(d.date);
+        if (Number.isNaN(dt.getTime())) return;
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        const key = `${y}-${m}`;
+        map[key] = (map[key] || 0) + (parseFloat(d.hours) || 0);
+      });
+      return map;
+    },
+
+    // NEW
+    lifetimeBalance() {
+      const totals = this.monthlyTotalsMap;
+      return Object.keys(totals).reduce((sum, k) => sum + (totals[k] - this.monthlyTarget), 0);
     },
 
     availableYears() {
